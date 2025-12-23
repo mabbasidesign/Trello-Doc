@@ -1,0 +1,44 @@
+ Environment Variables and Azure Key Vault Usage
+
+## 1. Local Development
+- `appsettings.Development.json` contains secrets for local use only.
+- You can also set environment variables manually in your terminal or IDE.
+- Example:
+  ```
+  set CosmosDb__ConnectionString=AccountEndpoint=...;AccountKey=...
+  ```
+
+## 2. Docker/Containerized Environments
+- Secrets and config values are injected as environment variables using `docker-compose` or Dockerfile `ENV` instructions.
+- Example in `docker-compose.yml`:
+  ```yaml
+  environment:
+    - CosmosDb__ConnectionString=${COSMOSDB_CONNECTION_STRING}
+  ```
+
+## 3. Azure App Service (Production/Cloud)
+- **Secrets are never stored in code or config files.**
+- In Azure, set environment variables in the App Service Configuration blade.
+- For production secrets, use Azure Key Vault references:
+  - In App Service, set an app setting like:
+    ```
+    @Microsoft.KeyVault(SecretUri=https://<your-keyvault-name>.vault.azure.net/secrets/<secret-name>/<secret-version>)
+    ```
+  - The app setting key matches what your app expects (e.g., `CosmosDb__ConnectionString`).
+  - Azure injects the secret value from Key Vault as an environment variable at runtime.
+
+## 4. How the App Reads These Values
+- The app uses .NET configuration providers, which automatically read from:
+  - appsettings.json
+  - Environment variables
+  - Azure Key Vault (via environment variable reference)
+- In code (see Program.cs), you access config like:
+  ```csharp
+  var cosmosConnectionString = builder.Configuration["CosmosDb:ConnectionString"];
+  ```
+- In production, this value comes from the environment variable, which is populated from Key Vault.
+
+## 5. Security Benefits
+- No secrets in code or source control.
+- Key Vault provides secure, auditable storage for secrets.
+- Managed Identity allows the app to access Key Vault without credentials.
