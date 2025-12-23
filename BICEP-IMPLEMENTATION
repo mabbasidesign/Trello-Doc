@@ -1,0 +1,58 @@
+# Azure Services Bicep Implementation
+
+## Overview
+We use Bicep, a domain-specific language (DSL) for Azure resource deployment, to define, provision, and manage all Azure infrastructure as code (IaC). This ensures our cloud resources are consistent, repeatable, secure, and version-controlled.
+
+---
+
+## 1. Folder Structure
+- All Bicep templates and deployment scripts are located in the `infra/` directory.
+- Key files include:
+  - `main.bicep`: The root template that orchestrates deployment of all resources.
+  - `appservices.bicep`: Defines App Service plans and web apps/containers.
+  - `cosmosdb.bicep`: Defines Cosmos DB accounts, databases, and containers.
+  - `keyvault.bicep`: Defines Azure Key Vault and access policies.
+  - `servicebus.bicep`: Defines Service Bus namespaces and queues.
+  - `sqlserver.bicep`: Defines SQL Server and databases.
+  - `apim.bicep`: Defines API Management resources.
+  - Supporting scripts: `deploy-apim.ps1`, `deploy-keyvault.ps1` for custom deployment steps.
+
+## 2. Modular Design
+- Each major Azure resource is defined in its own Bicep module for reusability and clarity.
+- The `main.bicep` file composes these modules, passing parameters and outputs as needed.
+
+## 3. Parameterization
+- Bicep templates use parameters for environment, region, resource names, SKU, and secrets references.
+- Parameters are set via pipeline variables or parameter files, enabling easy deployment to dev, test, and prod.
+
+## 4. Security & Identity
+- Managed identities are created and assigned to App Services and other resources.
+- RBAC roles are assigned to managed identities for secure, secretless access to resources (e.g., Key Vault, Cosmos DB).
+- No secrets are hardcoded; Key Vault is used for all sensitive values.
+
+## 5. Automation
+- Bicep deployments are triggered from the Azure DevOps pipeline as part of CI/CD.
+- The pipeline runs `az deployment` or `az bicep` commands to deploy or update resources.
+- All changes are tracked in source control for auditability.
+
+## 6. Best Practices
+- Use resource locks and tags for cost management and governance.
+- Use outputs to pass connection strings and resource IDs between modules and pipeline steps.
+- Validate templates with `bicep build` and `bicep lint` before deployment.
+- Follow the principle of least privilege for all identities and access policies.
+
+---
+
+**Summary:**
+- All Azure infrastructure is defined and managed as code using Bicep in the `infra/` folder.
+- Modular, parameterized templates enable secure, repeatable, and auditable deployments.
+- Security, identity, and secret management are built-in and automated.
+- The approach is production-ready and demonstrates best practices for interviews and real-world projects.
+
+---
+
+**References:**
+- See the `infra/` folder for all Bicep templates and deployment scripts.
+- See CI/CD and security docs in this folder for how Bicep integrates with automation and identity.
+
+
