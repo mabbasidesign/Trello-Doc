@@ -1,0 +1,54 @@
+# Identity, Key Vault, and Security in Azure Microservices
+
+## Entra ID (Azure AD) Basics
+- Entra ID (formerly Azure AD) is Azure’s cloud identity provider.
+- It manages users, groups, and service principals for authentication and authorization.
+- All secure resource access (Key Vault, Cosmos DB, etc.) is governed by Entra ID identities and roles.
+
+## Managed Identity (System vs User-Assigned)
+- **System-assigned:** Tied to a single resource (e.g., App Service). Created and deleted with the resource.
+- **User-assigned:** Standalone identity that can be assigned to multiple resources.
+- Managed identities allow your app to securely access Azure resources without storing credentials in code.
+
+## RBAC vs Connection Strings
+- **RBAC (Role-Based Access Control):** Grants permissions to identities at the resource level (e.g., “Cosmos DB Data Contributor”).
+- **Connection Strings:** Traditional way to access databases, but require storing secrets.
+- **Best Practice:** Use RBAC with managed identity for secretless, secure access. Use connection strings only for local/dev or legacy scenarios.
+
+## Key Vault Integration
+- Azure Key Vault stores secrets, keys, and certificates securely.
+- The app’s managed identity is granted access to Key Vault via RBAC (“Key Vault Secrets User”).
+- The app retrieves secrets (e.g., DB connection strings) at runtime using its managed identity—no secrets in code or config.
+
+## How Apps Authenticate Without Secrets
+- In production, the app uses `DefaultAzureCredential` or similar, which automatically uses the managed identity.
+- When the app needs to access Key Vault or Cosmos DB, Azure authenticates it using its managed identity—no passwords or keys required.
+- Permissions are controlled via RBAC in Entra ID.
+
+## How the App Accesses Key Vault (in this repo)
+- App Service is assigned a managed identity (via Bicep or Azure Portal).
+- Bicep grants this identity access to Key Vault.
+- In the pipeline or App Service config, secrets are referenced using Key Vault references or fetched at runtime using Azure SDKs.
+- Example: The SQL password or Cosmos DB key is never in code; it’s retrieved securely from Key Vault.
+
+## How Database Connections Are Secured
+- **Local/dev:** Use connection strings in appsettings.Development.json (never committed to source control).
+- **Production:** Use managed identity and RBAC for Cosmos DB, or fetch the connection string from Key Vault using the managed identity.
+- No secrets are stored in code or production config files.
+
+## How Services Authenticate to Each Other
+- If one service needs to call another, it uses managed identity to obtain a token from Entra ID and presents it to the other service.
+- The receiving service validates the token and authorizes the request based on RBAC or claims.
+
+---
+
+**Summary:**
+- Entra ID manages all identities and access.
+- Managed identity + RBAC = secretless, secure access to Azure resources.
+- Key Vault stores secrets; apps fetch them securely at runtime.
+- No secrets in code or config files in production.
+- Local/dev uses connection strings, but never commits secrets to source control.
+
+This approach is secure, cloud-native, and interview-ready.
+
+
