@@ -1,0 +1,120 @@
+Using Key Vault with Azure Function & Service Bus (Managed Identity)
+
+We want:
+
+Flow:
+
+Function App → Key Vault → Service Bus
+
+
+Secrets are never stored in the code.
+
+1️⃣ Prerequisites
+
+Function App (with System-assigned Managed Identity enabled)
+
+Service Bus namespace & queue
+
+Key Vault with a secret storing the Service Bus connection string or SAS key (optional if not using fully managed identity)
+
+RBAC permissions:
+
+Function App → Key Vault → Key Vault Secrets User
+
+Function App → Service Bus → Data Receiver
+
+2️⃣ Store Service Bus Secret in Key Vault
+
+In Azure Portal → Key Vault → Secrets:
+
+Name	Value
+ServiceBusConn	Endpoint=sb://...;SharedAccessKeyName=...;SharedAccessKey=...
+
+If you use Managed Identity fully, you don’t need to store the key at all. But storing it in Key Vault is common when migrating old apps.
+
+3️⃣ Assign RBAC to Function App
+Key Vault
+
+Function App → Identity → System-assigned → On
+
+Key Vault → Access Policies → Add → Function App → Secret Permissions → Get
+
+Service Bus
+
+Same as before: Data Receiver role on queue/namespace
+
+4️⃣ Reference Key Vault Secret in Function App
+Option A: Code retrieves secret at runtime
+using Azure.Identity;
+using Azure.Security.KeyVault.Secrets;
+using Azure.Messaging.ServiceBus;
+
+public class OrderHandler
+{
+    private readonly ServiceBusClient _client;
+
+    public OrderHandler()
+    {
+        // Key Vault URI
+        string kvUri = Environment.GetEnvironmentVariable("KeyVaultUri");
+        
+        // Secret name
+        var secretClient = new SecretClient(new Uri(kvUri), new DefaultAzureCredential());
+        KeyVaultSecret secret = secretClient.GetSecret("ServiceBusConn");
+        
+        // Create Service Bus client using secret
+        _client = new ServiceBusClient(secret.Value);
+    }
+
+    [Function("OrderCreatedHandler")]
+    public async Task Run([ServiceBusTrigger("orders", Connection = "ServiceBusConn")] ServiceBusReceivedMessage message, ILogger log)
+    {
+        log.LogInformation($"Message: {message.Body}");
+        // Process...
+    }
+}
+
+
+DefaultAzureCredential() automatically uses Managed Identity when running in Azure
+
+Locally, it can use Visual Studio/Azure CLI login
+
+Option B: Key Vault references in App Settings (Recommended)
+
+In Function App → Configuration → Add new App Setting:
+
+Name	Value
+ServiceBusConn	@Microsoft.KeyVault(SecretUri=https://<your-kv-name>.vault.azure.net/secrets/ServiceBusConn/<version>)
+
+In Function code:
+
+[ServiceBusTrigger("orders", Connection = "ServiceBusConn")]
+
+
+Azure runtime automatically resolves the Key Vault secret at runtime — no code needed.
+
+✅ This is the cleanest approach for production.
+
+5️⃣ Advantages of Using Key Vault
+
+Secrets never appear in code or local.settings.json
+
+Can rotate secrets in Key Vault without redeploying function
+
+Works seamlessly with CI/CD pipelines
+
+Fully compatible with Managed Identity
+
+6️⃣ Best Practices
+
+Use Managed Identity + fully qualified namespace whenever possible (no secrets)
+
+Use Key Vault only if migrating from old connection-string-based apps
+
+Always assign minimum RBAC roles
+
+Use App Setting references rather than retrieving secrets in every function (less boilerplate)
+
+🔑  Tip
+
+“Secure Service Bus connections by storing secrets in Key Vault and accessing them via Managed Identity. In modern patterns, we can avoid secrets entirely by using the Service Bus namespace with RBAC.”
