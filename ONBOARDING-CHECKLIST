@@ -1,0 +1,46 @@
+# Onboarding Checklist for New Developers
+
+Welcome to the team! Follow this checklist to get set up and productive quickly.
+
+---
+
+## 1. Prerequisites
+- Install .NET 8 SDK
+- Install Docker Desktop
+- Install Visual Studio Code (recommended) or Visual Studio
+- Get access to Azure DevOps and Azure Portal
+
+## 2. Clone the Repository
+- `git clone <repo-url>`
+- `cd Trello`
+
+## 3. Configure Local Environment
+- Copy `appsettings.Development.json` templates for each service and fill in local values
+- Ensure no secrets are committed to source control
+
+## 4. Run Services Locally
+- Use Docker Compose: `docker-compose -f docker/docker-compose.yml up --build`
+- Or run individual services: `dotnet run` in each service directory
+- Access Swagger UI at `http://localhost:<port>/swagger`
+
+## 5. Review Documentation
+- Read all docs in `src/application/` for security, CI/CD, Docker, Bicep, and API practices
+- Review `infra/` for Bicep templates and deployment scripts
+
+## 6. Working with Azure
+- Request access to required Azure resources (RBAC roles)
+- Use managed identity and Key Vault for secrets
+
+## 7. Making Changes
+- Follow Git flow: branch, commit, PR, merge
+- Write/update unit tests for new features
+- Update documentation as needed
+
+## 8. Troubleshooting
+- See `TROUBLESHOOTING-FAQ.md` in this folder for common issues
+
+---
+
+**Welcome aboard! If you have questions, ask your onboarding buddy or the project maintainer.**
+
+
