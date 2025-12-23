@@ -1,0 +1,58 @@
+# Docker Implementation for This Application
+
+## Overview
+Docker is used to containerize all microservices in this solution, enabling consistent, portable, and reproducible deployments across environments (dev, test, prod, and CI/CD).
+
+---
+
+## 1. Dockerfile for Each Service
+- Each service (inventory, order, product) has its own `Dockerfile` in its project folder under `src/`.
+- The `Dockerfile` defines how to build the service image, including:
+  - Base image (e.g., `mcr.microsoft.com/dotnet/aspnet:8.0`)
+  - Copying source code and dependencies
+  - Restoring, building, and publishing the app
+  - Exposing the required port
+  - Setting the entrypoint
+
+## 2. Multi-Stage Builds
+- Dockerfiles use multi-stage builds to minimize image size and improve security.
+- Build dependencies are not included in the final runtime image.
+
+## 3. Docker Compose
+- The `docker/` folder contains multiple `docker-compose` files:
+  - `docker-compose.yml`: Orchestrates all services for local development or integration testing.
+  - `docker-compose.infrastructure.yml`: Spins up supporting infrastructure (e.g., local Cosmos DB emulator, SQL, Service Bus, etc.).
+  - `docker-compose.order.yml`, `docker-compose.product.yml`: Service-specific compose files for targeted testing or deployment.
+- Compose files define service dependencies, environment variables, network configuration, and volume mounts.
+
+## 4. Local Development
+- Developers can run all services and infrastructure locally using Docker Compose:
+  - `docker-compose -f docker/docker-compose.yml up --build`
+- This ensures the local environment matches production as closely as possible.
+
+## 5. CI/CD Integration
+- The Azure DevOps pipeline builds Docker images for each service using their respective Dockerfiles.
+- Images are tagged with the commit SHA and pushed to Azure Container Registry (ACR).
+- The same images are deployed to Azure App Service or Container Apps, ensuring consistency between dev, test, and prod.
+
+## 6. Security & Best Practices
+- No secrets are baked into Docker images; secrets are injected at runtime via environment variables or Key Vault references.
+- Images are scanned for vulnerabilities as part of the CI/CD pipeline.
+- Only necessary ports are exposed, and images are kept minimal.
+
+---
+
+**Summary:**
+- Every service is containerized with its own Dockerfile and built using multi-stage builds.
+- Docker Compose orchestrates local development and integration testing.
+- CI/CD builds, tags, and pushes images to ACR for secure, repeatable deployments.
+- No secrets are stored in images; all configuration is injected securely at runtime.
+
+---
+
+**References:**
+- See each service's `Dockerfile` under `src/` for build details.
+- See `docker/` for compose files and orchestration.
+- See CI/CD and security docs in this folder for related automation and best practices.
+
+
