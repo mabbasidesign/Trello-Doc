@@ -1,0 +1,114 @@
+Implement Service Bus Trigger with Managed Identity (No connection string)
+
+We’ll assume you have:
+
+Azure Function App
+
+Service Bus namespace & queue
+
+Azure CLI or Portal access
+
+1️⃣ Enable Managed Identity for Function App
+
+System-assigned Managed Identity gives your function an identity in Azure AD.
+
+Using Azure Portal:
+
+Go to Function App → Identity → System assigned → On → Save
+
+Azure creates an identity for your function
+
+Copy the Object ID (optional)
+
+2️⃣ Assign RBAC to the Managed Identity
+
+The function must have permission to read messages from Service Bus.
+
+Via Portal:
+
+Go to Service Bus → your namespace → Access control (IAM)
+
+Click Add role assignment
+
+Role: Azure Service Bus Data Receiver
+
+Assign access to: Function App (Managed Identity) → Save
+
+3️⃣ Configure App Setting
+
+Now the function needs the Service Bus namespace, not the full connection string.
+
+App Setting name: ServiceBusConnection (same as in [ServiceBusTrigger(..., Connection="ServiceBusConnection")])
+
+Value: your Service Bus fully qualified namespace
+
+Example:
+
+Name	Value
+ServiceBusConnection	mybus.servicebus.windows.net
+
+⚠️ Do not put SAS key or connection string here.
+
+4️⃣ Install Azure.Messaging.ServiceBus SDK
+
+Managed Identity requires Azure Identity authentication.
+
+dotnet add package Azure.Messaging.ServiceBus
+dotnet add package Azure.Identity
+
+5️⃣ Implement the Function
+using Azure.Messaging.ServiceBus;
+using Azure.Identity;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Extensions.Logging;
+
+public class OrderCreatedHandler
+{
+    private readonly ILogger _logger;
+
+    public OrderCreatedHandler(ILoggerFactory loggerFactory)
+    {
+        _logger = loggerFactory.CreateLogger<OrderCreatedHandler>();
+    }
+
+    [Function("OrderCreatedHandler")]
+    public async Task Run(
+        [ServiceBusTrigger("orders", Connection = "ServiceBusConnection")] ServiceBusReceivedMessage message)
+    {
+        // Log message body
+        _logger.LogInformation($"Message received: {message.Body}");
+
+        // Process your message...
+    }
+}
+
+
+✅ Key points:
+
+[ServiceBusTrigger] still works
+
+Runtime automatically uses Managed Identity
+
+No secrets stored anywhere
+
+RBAC permission is required
+
+6️⃣ How runtime authenticates
+
+Flow:
+
+Function App starts → Managed Identity token requested
+
+Token is requested for Service Bus namespace
+
+Azure SDK uses token to authenticate
+
+Messages are processed
+
+No SAS keys, no connection string — secure & scalable.
+
+7️⃣ Common pitfalls
+Pitfall	Solution
+Function fails: unauthorized	Check RBAC for Managed Identity
+Using old [Microsoft.Azure.WebJobs.ServiceBus] SDK	Use Azure.Messaging.ServiceBus + Azure.Identity
+Incorrect App Setting	Must match Connection="ServiceBusConnection" in code
