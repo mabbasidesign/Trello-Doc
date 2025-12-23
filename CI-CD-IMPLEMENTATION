@@ -1,0 +1,62 @@
+# CI/CD Implementation for This Application
+
+## Overview
+We use Azure DevOps Pipelines for continuous integration (CI) and continuous deployment (CD) of our microservices and infrastructure. The process is fully automated, secure, and cloud-native.
+
+---
+
+## 1. Pipeline Structure
+- The main pipeline definition is in `azure-pipelines/azure-pipelines.yml`.
+- The pipeline is triggered on pushes to main branches and on pull requests.
+- It covers build, test, Docker image creation, infrastructure deployment, and app deployment.
+
+## 2. Build Stage
+- Restores NuGet packages and builds all .NET services (inventory, order, product).
+- Runs unit tests to ensure code quality.
+- Artifacts (DLLs, Docker images) are produced for deployment.
+
+## 3. Dockerization
+- Each service has its own `Dockerfile` for containerization.
+- The pipeline builds Docker images for each service.
+- Images are tagged with the commit SHA and pushed to Azure Container Registry (ACR).
+
+## 4. Infrastructure as Code (IaC)
+- Infrastructure is defined using Bicep templates in the `infra/` folder.
+- The pipeline deploys or updates Azure resources (App Service, Cosmos DB, Key Vault, Service Bus, SQL, etc.) using these Bicep files.
+- Parameters (like region, resource names) are passed from pipeline variables.
+
+## 5. Secret Management
+- No secrets are stored in code or config files.
+- The pipeline uses Azure Key Vault to retrieve secrets at runtime.
+- Service connection and managed identity are used for secure access to Azure resources.
+
+## 6. Deployment Stage
+- The pipeline deploys Docker images to Azure App Service or Azure Container Apps.
+- Environment variables and Key Vault references are injected into the app configuration.
+- Health checks and smoke tests are run post-deployment.
+
+## 7. Security & Compliance
+- The pipeline uses managed identity or a service principal with least-privilege access.
+- All deployments are auditable and repeatable.
+- RBAC is enforced for all pipeline operations.
+
+## 8. Rollback & Monitoring
+- If a deployment fails, the pipeline can roll back to the previous stable version.
+- Logs and metrics are collected for monitoring and troubleshooting.
+
+---
+
+**Summary:**
+- Our CI/CD pipeline is fully automated, secure, and cloud-native.
+- It builds, tests, containerizes, and deploys both code and infrastructure.
+- All secrets are managed via Key Vault and never stored in code.
+- The process is repeatable, auditable, and ready for real-world production and interview scenarios.
+
+---
+
+**References:**
+- See `azure-pipelines/azure-pipelines.yml` for the full pipeline definition.
+- See `infra/` for Bicep templates and infrastructure automation.
+- See security docs in this folder for identity and secret management details.
+
+
