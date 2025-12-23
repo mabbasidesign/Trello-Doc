@@ -1,0 +1,69 @@
+# Troubleshooting & FAQ
+
+## Common Issues and Solutions
+
+### 1. Build or Restore Fails
+- **Symptom:** `dotnet build` or `dotnet restore` fails.
+- **Solution:**
+  - Ensure you have .NET 8 SDK installed.
+  - Run `dotnet restore` in the service directory.
+  - Delete `bin/` and `obj/` folders and rebuild.
+
+### 2. Docker Build Fails
+- **Symptom:** Docker image fails to build.
+- **Solution:**
+  - Check Dockerfile paths and casing.
+  - Ensure Docker Desktop is running.
+  - Run `docker system prune` to clean up unused resources.
+
+### 3. Pipeline Deployment Fails
+- **Symptom:** Azure DevOps pipeline fails on deploy step.
+- **Solution:**
+  - Check pipeline logs for error details.
+  - Ensure service connections and permissions are correct.
+  - Validate Bicep templates with `bicep build` and `bicep lint`.
+
+### 4. App Cannot Access Azure Resources
+- **Symptom:** 403/401 errors when accessing Key Vault, Cosmos DB, etc.
+- **Solution:**
+  - Verify managed identity is enabled and has correct RBAC roles.
+  - Check Key Vault access policies and firewall settings.
+
+### 5. API Not Responding or 500 Errors
+- **Symptom:** API returns 500 or is unreachable.
+- **Solution:**
+  - Check logs in `logs/` folder or Azure App Service diagnostics.
+  - Ensure environment variables and secrets are set correctly.
+  - Test locally with `dotnet run` and via Docker Compose.
+
+### 6. Local Development Issues
+- **Symptom:** Services can't connect to local emulators or each other.
+- **Solution:**
+  - Check Docker Compose network settings.
+  - Ensure all containers are healthy (`docker ps`).
+  - Use correct connection strings for local emulators.
+
+---
+
+## FAQ
+
+**Q: Where are secrets stored?**
+A: In Azure Key Vault for production. Never in code or config files.
+
+**Q: How do I add a new Azure resource?**
+A: Add a new Bicep module in `infra/` and reference it in `main.bicep`.
+
+**Q: How do I update the API docs?**
+A: Update controllers/DTOs and XML comments; Swagger/OpenAPI docs update automatically.
+
+**Q: How do I run everything locally?**
+A: Use Docker Compose: `docker-compose -f docker/docker-compose.yml up --build`
+
+**Q: How do I get access to Azure resources?**
+A: Request RBAC role assignment for your user or managed identity.
+
+---
+
+For more help, see the other docs in this folder or contact the project maintainer.
+
+
