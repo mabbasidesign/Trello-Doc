@@ -1,0 +1,185 @@
+Environment Variables in Azure App Service & Functions
+1️⃣ What is an environment variable (in Azure)?
+
+An environment variable is:
+
+A key–value pair
+
+Injected into your app at runtime
+
+Not compiled into your code
+
+Example:
+
+ServiceBusConnection = mybus.servicebus.windows.net
+
+
+In Azure:
+
+App Service / Function App → Configuration → Application settings
+
+These become OS-level environment variables
+
+2️⃣ Why environment variables exist (the WHY)
+❌ Bad (hard-coded values)
+var sb = "mybus.servicebus.windows.net";
+
+
+Problems:
+
+Can’t change without redeploy
+
+Not environment-safe (dev/prod)
+
+Secrets risk
+
+✅ Good (environment variables)
+var sb = Environment.GetEnvironmentVariable("ServiceBusConnection");
+
+
+Benefits:
+
+Same code for dev/test/prod
+
+Secure
+
+CI/CD friendly
+
+Zero redeploy for config changes
+
+3️⃣ Where environment variables come from
+A. Local development
+
+local.settings.json (Functions only)
+
+{
+  "Values": {
+    "ServiceBusConnection": "UseDevelopmentStorage=true"
+  }
+}
+
+
+⚠️ Never committed
+
+B. Azure App Service / Function App
+
+Portal → Configuration → Application settings
+
+Name	Value
+ServiceBusConnection	mybus.servicebus.windows.net
+KeyVaultUri	https://kv-myapp.vault.azure.net
+
+✔ Encrypted at rest
+✔ Restart app automatically on change
+
+C. CI/CD Pipeline
+
+Pipeline sets or updates these values during deployment.
+
+4️⃣ How your code reads environment variables
+Azure Function
+string sb = Environment.GetEnvironmentVariable("ServiceBusConnection");
+
+ASP.NET Core (preferred)
+builder.Configuration["ServiceBusConnection"];
+
+
+Azure injects the value before your app starts.
+
+5️⃣ How pipelines use environment variables
+Pipeline variables (Azure DevOps example)
+variables:
+  environment: prod
+  functionAppName: func-myapp-prod
+
+
+Used as:
+
+- script: echo $(functionAppName)
+
+Secrets in pipeline
+variables:
+- name: ServiceBusConn
+  value: $(ServiceBusConn)
+  isSecret: true
+
+
+✔ Masked in logs
+✔ Never printed
+
+6️⃣ Pipeline → App Service flow (VERY IMPORTANT)
+Pipeline Variable
+      ↓
+Deployment task
+      ↓
+App Service Application Setting
+      ↓
+Environment Variable
+      ↓
+Application Code
+
+
+Example:
+
+- task: AzureAppServiceSettings@1
+  inputs:
+    appName: func-myapp-prod
+    appSettings: |
+      [
+        {
+          "name": "ServiceBusConnection",
+          "value": "$(ServiceBusConn)",
+          "slotSetting": false
+        }
+      ]
+
+7️⃣ Key Vault + Environment Variables (BEST PRACTICE)
+
+Instead of storing secrets:
+
+ServiceBusConn = @Microsoft.KeyVault(SecretUri=https://kv.../secrets/ServiceBusConn)
+
+
+Azure:
+
+Resolves secret at runtime
+
+Injects value as env var
+
+Your code never knows Key Vault exists
+
+8️⃣ Why this is perfect for CI/CD
+Concern	Solved by env vars
+Multiple environments	dev/test/prod
+Secret rotation	Change KV only
+Zero redeploy	Change config
+Secure pipelines	No secrets in repo
+9️⃣ Common Azure interview traps ⚠️
+
+Q: Are app settings compiled into the app?
+A: ❌ No — injected at runtime.
+
+Q: Do app settings restart the app?
+A: ✅ Yes.
+
+Q: Can pipelines read app settings?
+A: ❌ No — they only write them.
+
+🔟 Mental model (remember this)
+Code is static
+Config is dynamic
+Secrets live in Key Vault
+Environment variables connect everything
+
+1️⃣1️⃣ When NOT to use environment variables
+
+Large config files → use config service
+
+Feature flags → use Azure App Configuration
+
+User data → database
+
+1️⃣2️⃣ How this fits YOUR interviews
+
+
+“Keep code environment-agnostic by injecting configuration through App Service environment variables, managed by CI/CD and backed by Key Vault.”
