@@ -1,0 +1,50 @@
+# API Documentation (Swagger/OpenAPI)
+
+## Overview
+All microservices in this solution expose RESTful APIs documented using Swagger (OpenAPI). This enables easy discovery, testing, and integration for developers and consumers.
+
+---
+
+## 1. Swagger Integration
+- Each .NET service (inventory, order, product) uses the Swashbuckle.AspNetCore package to generate Swagger/OpenAPI docs at runtime.
+- Swagger UI is enabled in development and test environments for interactive API exploration.
+- The OpenAPI spec (JSON) is available at `/swagger/v1/swagger.json` for each service.
+
+## 2. How to Access
+- Run any service locally (e.g., `dotnet run` or via Docker Compose).
+- Open your browser to `http://localhost:<port>/swagger` to view the Swagger UI.
+- The UI lists all endpoints, request/response schemas, and allows you to try out API calls.
+
+## 3. OpenAPI Specification
+- The OpenAPI spec is auto-generated from controllers, routes, and data annotations.
+- It includes:
+  - Endpoint paths and HTTP methods
+  - Request and response models (DTOs)
+  - Query parameters, path parameters, and request bodies
+  - Response codes and descriptions
+  - Security schemes (if enabled)
+
+## 4. Customization
+- XML comments in code are included for richer documentation.
+- You can customize the Swagger UI and OpenAPI metadata in `Program.cs` or `Startup.cs`.
+- Security definitions (e.g., JWT Bearer) can be added for protected endpoints.
+
+## 5. CI/CD and Deployment
+- Swagger/OpenAPI docs are available in all deployed environments (unless disabled for production).
+- The OpenAPI spec can be used to generate client SDKs or for API management onboarding.
+
+---
+
+**Summary:**
+- Every service exposes interactive API docs via Swagger UI and OpenAPI spec.
+- Docs are always up-to-date with the codebase.
+- This enables rapid onboarding, testing, and integration for developers and consumers.
+
+---
+
+**References:**
+- See each service’s `/swagger` endpoint for live docs.
+- See `Program.cs` in each service for Swagger configuration.
+- See Swashbuckle docs: https://github.com/domaindrivendev/Swashbuckle.AspNetCore
+
+
