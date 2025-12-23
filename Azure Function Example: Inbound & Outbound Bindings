@@ -1,0 +1,91 @@
+Azure Function Example: Inbound & Outbound Bindings
+
+Scenario:
+
+An order message arrives in a Service Bus queue (inbound trigger)
+
+Function processes it
+
+Then writes the order data to Blob Storage (outbound binding)
+
+1️⃣ Project Setup
+func init OrderProcessor --worker-runtime dotnet-isolated
+cd OrderProcessor
+func new --name ProcessOrder --template "ServiceBus Queue Trigger"
+
+2️⃣ local.settings.json
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "ServiceBusConnection": "Endpoint=sb://<your-namespace>.servicebus.windows.net/;SharedAccessKeyName=...;SharedAccessKey=..."
+  }
+}
+
+3️⃣ Function Code (C#)
+using System.Text.Json;
+using Azure.Messaging.ServiceBus;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.Functions.Worker.Http;
+using Microsoft.Extensions.Logging;
+
+public class ProcessOrder
+{
+    private readonly ILogger _logger;
+
+    public ProcessOrder(ILoggerFactory loggerFactory)
+    {
+        _logger = loggerFactory.CreateLogger<ProcessOrder>();
+    }
+
+    // Inbound Binding: Service Bus Trigger
+    [Function("ProcessOrder")]
+    public async Task Run(
+        [ServiceBusTrigger("orders", Connection = "ServiceBusConnection")] string message,
+        [BlobOutput("processed-orders/{rand-guid}.json", Connection = "AzureWebJobsStorage")] out string outputBlob)
+    {
+        _logger.LogInformation($"Received order: {message}");
+
+        // Deserialize JSON (optional)
+        var order = JsonSerializer.Deserialize<Order>(message);
+
+        // Business logic: e.g., add timestamp
+        order.ProcessedAt = DateTime.UtcNow;
+
+        // Outbound binding: write to blob
+        outputBlob = JsonSerializer.Serialize(order);
+
+        _logger.LogInformation("Order saved to blob storage");
+    }
+}
+
+// Example model
+public class Order
+{
+    public string Id { get; set; }
+    public string Product { get; set; }
+    public int Quantity { get; set; }
+    public DateTime ProcessedAt { get; set; }
+}
+
+4️⃣ Explanation
+Binding Type	Direction	Code / Attribute	Usage
+Service Bus	Inbound	[ServiceBusTrigger("orders", Connection="ServiceBusConnection")]	Trigger function when a message arrives
+Blob Storage	Outbound	[BlobOutput("processed-orders/{rand-guid}.json", Connection="AzureWebJobsStorage")]	Write processed order automatically to blob storage
+
+Key points:
+
+rand-guid generates a unique file name for each message
+
+Outbound binding means you don’t need to create BlobClient manually
+
+You can also have multiple output bindings (e.g., Service Bus topic, Table Storage, Event Grid)
+
+5️⃣ More Examples of Bindings
+Scenario	Inbound	Outbound
+API → Service Bus → DB	HTTPTrigger	SQL Output Binding
+Timer → Queue → Blob	TimerTrigger	BlobOutput
+Event Grid → Service Bus → Event Hub	EventGridTrigger	ServiceBusOutput
+6️⃣ Tip
+
+“Inbound bindings trigger the function from events like Service Bus, HTTP, or Timer. Outbound bindings let us write data to Storage, Service Bus, or other services automatically, without boilerplate client code.”
